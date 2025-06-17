@@ -99,10 +99,12 @@ vim.g.have_nerd_font = false
 --  For more options, you can see `:help option-list`
 
 -- Make line numbers default
-vim.o.number = true
+-- vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
+
+vim.o.autochdir = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -351,6 +353,50 @@ require('lazy').setup({
     },
   },
 
+  {
+    'hrsh7th/nvim-cmp',
+    version = false,
+    event = 'InsertEnter',
+    dependencies = {
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-path',
+      'hrsh7th/cmp-buffer',
+    },
+    config = function()
+      local cmp = require 'cmp'
+      local opts = {
+        -- Where to get completion results from
+        sources = cmp.config.sources {
+          { name = 'nvim_lsp' },
+          { name = 'buffer' },
+          { name = 'path' },
+        },
+        -- Make 'enter' key select the completion
+        mapping = cmp.mapping.preset.insert {
+          ['<CR>'] = cmp.mapping.confirm { select = true },
+          ['<tab>'] = cmp.mapping(function(original)
+            if cmp.visible() then
+              cmp.select_next_item() -- run completion selection if completing
+            else
+              original() -- run the original behavior if not completing
+            end
+          end, { 'i', 's' }),
+          ['<S-tab>'] = cmp.mapping(function(original)
+            if cmp.visible() then
+              cmp.select_prev_item()
+            else
+              original()
+            end
+          end, { 'i', 's' }),
+        },
+      }
+      cmp.setup(opts)
+    end,
+  },
+  { 'hrsh7th/cmp-nvim-lsp', lazy = true },
+  { 'hrsh7th/cmp-path', lazy = true },
+  { 'hrsh7th/cmp-buffer', lazy = true },
+
   -- NOTE: Plugins can specify dependencies.
   --
   -- The dependencies are proper plugin specifications as well - anything
@@ -493,6 +539,8 @@ require('lazy').setup({
       'saghen/blink.cmp',
     },
     config = function()
+      vim.lsp.enable 'sourcekit'
+
       -- Brief aside: **What is LSP?**
       --
       -- LSP is an initialism you've probably heard, but might not understand what it is.
@@ -534,6 +582,8 @@ require('lazy').setup({
             mode = mode or 'n'
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
+
+          vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = 'Open documentation. Tap twice to enter doc.', noremap = true, silent = true })
 
           -- Rename the variable under your cursor.
           --  Most Language Servers support renaming across files, etc.
@@ -664,6 +714,7 @@ require('lazy').setup({
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
+
       --  Add any additional override configuration in the following tables. Available keys are:
       --  - cmd (table): Override the default command used to start the server
       --  - filetypes (table): Override the default list of associated filetypes for the server
@@ -876,27 +927,39 @@ require('lazy').setup({
     },
   },
 
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
+  {
+    'ellisonleao/gruvbox.nvim',
+    priority = 1000,
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
+      require('gruvbox').setup {
+        terminal_colors = true, -- add neovim terminal colors
+        undercurl = true,
+        underline = true,
+        bold = true,
+        italic = {
+          strings = false,
+          emphasis = true,
+          comments = false,
+          operators = false,
+          folds = true,
         },
+        strikethrough = true,
+        invert_selection = false,
+        invert_signs = false,
+        invert_tabline = false,
+        inverse = true, -- invert background for search, diffs, statuslines and errors
+        contrast = '', -- can be "hard", "soft" or empty string
+        palette_overrides = {},
+        overrides = {},
+        dim_inactive = false,
+        transparent_mode = false,
       }
-
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.o.background = 'dark' -- or "light" for light mode
+      vim.cmd 'colorscheme gruvbox'
     end,
   },
+
+  { 'akinsho/toggleterm.nvim', version = '*', config = true, opts = {} },
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
