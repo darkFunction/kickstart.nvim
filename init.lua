@@ -286,6 +286,55 @@ require('lazy').setup({
     },
   },
 
+  {
+    'wojciech-kulik/xcodebuild.nvim',
+    dependencies = {
+      'nvim-telescope/telescope.nvim',
+      'MunifTanjim/nui.nvim',
+      'folke/snacks.nvim', -- (optional) to show previews
+      'nvim-tree/nvim-tree.lua', -- (optional) to manage project files
+      'stevearc/oil.nvim', -- (optional) to manage project files
+      'nvim-treesitter/nvim-treesitter', -- (optional) for Quick tests support (required Swift parser)
+    },
+    config = function()
+      require('xcodebuild').setup {
+        -- put some options here or leave it empty to use default settings
+      }
+    end,
+  },
+  -- {
+  --   'seandewar/killersheep.nvim',
+  -- },
+
+  {
+    'mfussenegger/nvim-dap',
+    dependencies = {
+      'wojciech-kulik/xcodebuild.nvim',
+    },
+    config = function()
+      local xcodebuild = require 'xcodebuild.integrations.dap'
+      -- SAMPLE PATH, change it to your local codelldb path
+      local codelldbPath = os.getenv 'HOME' .. '/tools/codelldb-aarch64-darwin/extension/adapter/codelldb'
+
+      xcodebuild.setup(codelldbPath)
+
+      vim.keymap.set('n', '<leader>dd', xcodebuild.build_and_debug, { desc = 'Build & Debug' })
+      vim.keymap.set('n', '<leader>dr', xcodebuild.debug_without_build, { desc = 'Debug Without Building' })
+      vim.keymap.set('n', '<leader>dt', xcodebuild.debug_tests, { desc = 'Debug Tests' })
+      vim.keymap.set('n', '<leader>dT', xcodebuild.debug_class_tests, { desc = 'Debug Class Tests' })
+      vim.keymap.set('n', '<leader>b', xcodebuild.toggle_breakpoint, { desc = 'Toggle Breakpoint' })
+      vim.keymap.set('n', '<leader>B', xcodebuild.toggle_message_breakpoint, { desc = 'Toggle Message Breakpoint' })
+      vim.keymap.set('n', '<leader>dx', xcodebuild.terminate_session, { desc = 'Terminate Debugger' })
+    end,
+    integrations = {
+      pymobiledevice = {
+        enabled = true,
+      },
+    },
+  },
+  {
+    'eandrju/cellular-automaton.nvim',
+  },
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -539,7 +588,7 @@ require('lazy').setup({
       'saghen/blink.cmp',
     },
     config = function()
-      vim.lsp.enable 'sourcekit'
+      local lspconfig = require 'lspconfig'
 
       -- Brief aside: **What is LSP?**
       --
@@ -722,6 +771,7 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
+        solidity_ls = {},
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -780,8 +830,21 @@ require('lazy').setup({
             -- by the server configuration above. Useful when disabling
             -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
+            lspconfig[server_name].setup(server)
           end,
+        },
+      }
+
+      -- Swift / Xcode setup
+      lspconfig.sourcekit.setup {
+        cmd = { vim.trim(vim.fn.system 'xcrun -f sourcekit-lsp') } or nil,
+
+        capabilities = {
+          workspace = {
+            didChangeWatchedFiles = {
+              dynamicRegistration = true,
+            },
+          },
         },
       }
     end,
