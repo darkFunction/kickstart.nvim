@@ -291,9 +291,7 @@ require('lazy').setup({
     dependencies = {
       'nvim-tree/nvim-web-devicons',
     },
-    config = function()
-      require('nvim-tree').setup {}
-    end,
+    opts = {},
   },
 
   {
@@ -349,9 +347,16 @@ require('lazy').setup({
       'nvim-treesitter/nvim-treesitter', -- (optional) for Quick tests support (required Swift parser)
     },
     config = function()
-      require('xcodebuild').setup {
-        -- put some options here or leave it empty to use default settings
-      }
+      local xcodebuild = require 'xcodebuild'
+
+      vim.keymap.set('n', '<leader>xp', '<cmd>XcodebuildPicker<cr>', { desc = 'Show Xcodebuild Actions' })
+      vim.keymap.set('n', '<leader>xm', '<cmd>XcodebuildProjectManager<cr>', { desc = 'Show Project Manager Actions' })
+      vim.keymap.set('n', '<leader>xr', '<cmd>XcodebuildBuildRun<cr>', { desc = 'Build & Run Project' })
+      vim.keymap.set('n', '<leader>xl', '<cmd>XcodebuildToggleLogs<cr>', { desc = 'Toggle Xcodebuild Logs' })
+      vim.keymap.set('n', '<leader>xc', '<cmd>XcodebuildToggleCodeCoverage<cr>', { desc = 'Toggle Code Coverage' })
+      vim.keymap.set('n', '<leader>xC', '<cmd>XcodebuildShowCodeCoverageReport<cr>', { desc = 'Show Code Coverage Report' })
+      vim.keymap.set('n', '<leader>xe', '<cmd>XcodebuildTestExplorerToggle<cr>', { desc = 'Toggle Test Explorer' })
+      xcodebuild.setup {}
     end,
   },
   {
@@ -373,6 +378,24 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>b', xcodebuild.toggle_breakpoint, { desc = 'Toggle Breakpoint' })
       vim.keymap.set('n', '<leader>B', xcodebuild.toggle_message_breakpoint, { desc = 'Toggle Message Breakpoint' })
       vim.keymap.set('n', '<leader>dx', xcodebuild.terminate_session, { desc = 'Terminate Debugger' })
+
+      local dap = require 'dap'
+      local ui = require 'dapui'
+
+      vim.fn.sign_define('DapBreakpoint', { text = '🐞' })
+
+      dap.listeners.before.attach.dapui_config = function()
+        ui.open()
+      end
+      dap.listeners.before.launch.dapui_config = function()
+        ui.open()
+      end
+      dap.listeners.before.event_terminated.dapui_config = function()
+        ui.close()
+      end
+      dap.listeners.before.event_exited.dapui_config = function()
+        ui.close()
+      end
     end,
     integrations = {
       pymobiledevice = {
@@ -386,9 +409,7 @@ require('lazy').setup({
       'mfussenegger/nvim-dap',
       'nvim-neotest/nvim-nio',
     },
-    config = function()
-      require('dapui').setup()
-    end,
+    opts = {},
   },
   {
     'eandrju/cellular-automaton.nvim',
@@ -454,6 +475,7 @@ require('lazy').setup({
       -- Document existing key chains
       spec = {
         { '<leader>s', group = '[S]earch' },
+        { '<leader>x', group = '[X]code' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
