@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -103,8 +103,6 @@ vim.g.have_nerd_font = false
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
 vim.o.relativenumber = true
-
-vim.o.autochdir = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -287,6 +285,17 @@ require('lazy').setup({
   },
 
   {
+    'rest-nvim/rest.nvim',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+      opts = function(_, opts)
+        opts.ensure_installed = opts.ensure_installed or {}
+        table.insert(opts.ensure_installed, 'http')
+      end,
+    },
+  },
+
+  {
     'wojciech-kulik/xcodebuild.nvim',
     dependencies = {
       'nvim-telescope/telescope.nvim',
@@ -302,10 +311,6 @@ require('lazy').setup({
       }
     end,
   },
-  -- {
-  --   'seandewar/killersheep.nvim',
-  -- },
-
   {
     'mfussenegger/nvim-dap',
     dependencies = {
@@ -314,7 +319,7 @@ require('lazy').setup({
     config = function()
       local xcodebuild = require 'xcodebuild.integrations.dap'
       -- SAMPLE PATH, change it to your local codelldb path
-      local codelldbPath = os.getenv 'HOME' .. '/tools/codelldb-aarch64-darwin/extension/adapter/codelldb'
+      local codelldbPath = os.getenv 'HOME' .. '/tools/codelldb-darwin-x64/extension/adapter/codelldb'
 
       xcodebuild.setup(codelldbPath)
 
