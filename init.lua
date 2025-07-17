@@ -26,6 +26,23 @@ vim.g.have_nerd_font = true
 
 vim.g.markdown_folding = 1
 
+-- Custom LSP's
+vim.filetype.add {
+  extension = {
+    daml = 'daml',
+  },
+}
+vim.lsp.config['daml'] = {
+  cmd = {
+    'daml',
+    'ide',
+  },
+  filetypes = { 'daml' },
+  root_markers = { 'daml.yaml', 'daml.yml' },
+  settings = {},
+}
+vim.lsp.enable 'daml'
+
 -- [[ Setting options ]]
 -- See `:help vim.o`
 --  For more options, you can see `:help option-list`
