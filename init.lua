@@ -93,6 +93,11 @@ vim.o.splitbelow = true
 -- Break lines at word
 vim.o.linebreak = true
 
+-- Tabs
+vim.o.tabstop = 2
+vim.o.shiftwidth = 2
+vim.o.expandtab = true
+
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
@@ -133,6 +138,7 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 
 -- Insert handy things
 vim.keymap.set('n', '<leader>id', '<cmd>r!date<cr>', { desc = 'Insert date' })
+vim.keymap.set('n', '<leader>ib', '<cmd>r!git rev-parse --abbrev-ref HEAD<cr>', { desc = 'Insert git branch' })
 vim.keymap.set('n', '<leader>ib', '<cmd>r!git rev-parse --abbrev-ref HEAD<cr>', { desc = 'Insert git branch' })
 
 vim.keymap.set(
@@ -244,6 +250,25 @@ rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+  'alvan/vim-closetag',
+  {
+    'christoomey/vim-tmux-navigator',
+    cmd = {
+      'TmuxNavigateLeft',
+      'TmuxNavigateDown',
+      'TmuxNavigateUp',
+      'TmuxNavigateRight',
+      'TmuxNavigatePrevious',
+      'TmuxNavigatorProcessList',
+    },
+    keys = {
+      { '<c-h>', '<cmd><C-U>TmuxNavigateLeft<cr>' },
+      { '<c-j>', '<cmd><C-U>TmuxNavigateDown<cr>' },
+      { '<c-k>', '<cmd><C-U>TmuxNavigateUp<cr>' },
+      { '<c-l>', '<cmd><C-U>TmuxNavigateRight<cr>' },
+      { '<c-\\>', '<cmd><C-U>TmuxNavigatePrevious<cr>' },
+    },
+  },
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -270,13 +295,16 @@ require('lazy').setup({
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
     opts = {
-      signs = {
-        add = { text = '+' },
-        change = { text = '~' },
-        delete = { text = '_' },
-        topdelete = { text = '‾' },
-        changedelete = { text = '~' },
+      current_line_blame = true,
+      current_line_blame_opts = {
+        virt_text = true,
+        virt_text_pos = 'right_align', -- 'eol' | 'overlay' | 'right_align'
+        virt_text_priority = 100,
       },
+    },
+    keys = {
+      { '[g', '<cmd>Gitsigns nav_hunk "next"<cr>' },
+      { '[G', '<cmd>Gitsigns nav_hunk "prev"<cr>' },
     },
   },
   {
@@ -380,29 +408,29 @@ require('lazy').setup({
       }
     end,
   },
-  {
-    'nvimdev/dashboard-nvim',
-    event = 'VimEnter',
-    config = function()
-      local ascii = require 'ascii'
-      local headerArt = ascii.art.misc.skulls.threeskulls_big_v1
-      table.insert(headerArt, '')
-      require('dashboard').setup {
-        config = {
-          shortcut = {
-            { desc = 'cd Projects', group = 'projects', key = '1', action = ':cd ~/Projects | echo "Entered Projects folder"' },
-          },
-          packages = { enable = true },
-          header = headerArt,
-          week_header = {
-            enable = true,
-          },
-          footer = {},
-        },
-      }
-    end,
-    dependencies = { { 'nvim-tree/nvim-web-devicons' } },
-  },
+  --{
+  --  'nvimdev/dashboard-nvim',
+  --  event = 'VimEnter',
+  --  config = function()
+  --    local ascii = require 'ascii'
+  --    local headerArt = ascii.art.misc.skulls.threeskulls_big_v1
+  --    table.insert(headerArt, '')
+  --    require('dashboard').setup {
+  --      config = {
+  --        shortcut = {
+  --          { desc = 'cd Projects', group = 'projects', key = '1', action = ':cd ~/Projects | echo "Entered Projects folder"' },
+  --        },
+  --        packages = { enable = true },
+  --        header = headerArt,
+  --        week_header = {
+  --          enable = true,
+  --        },
+  --        footer = {},
+  --      },
+  --    }
+  --  end,
+  --  dependencies = { { 'nvim-tree/nvim-web-devicons' } },
+  --},
   {
     'folke/zen-mode.nvim',
     opts = {
@@ -412,32 +440,15 @@ require('lazy').setup({
           relativenumber = false,
         },
       },
+      plugins = {
+        twilight = { enabled = true }, -- enable to start Twilight when zen mode opens
+        gitsigns = { enabled = false }, -- disables git signs
+        tmux = { enabled = false }, -- disables the tmux statusline
+        todo = { enabled = false },
+      },
     },
     keys = {
       { '<leader>uz', '<cmd>ZenMode<cr>', desc = 'Toggle zen mode' },
-    },
-  },
-  {
-    'folke/twilight.nvim',
-    opts = {
-      dimming = {
-        alpha = 0.35, -- amount of dimming
-        -- we try to get the foreground from the highlight groups or fallback color
-        color = { 'Normal', '#ffffff' },
-        term_bg = '#000000', -- if guibg=NONE, this will be used to calculate text color
-        inactive = false, -- when true, other windows will be fully dimmed (unless they contain the same buffer)
-      },
-      context = 20, -- amount of lines we will try to show around the current line
-      treesitter = true, -- use treesitter when available for the filetype
-      -- treesitter is used to automatically expand the visible text,
-      -- but you can further control the types of nodes that should always be fully expanded
-      expand = { -- for treesitter, we we always try to expand to the top-most ancestor with these types
-        'function',
-        'method',
-        'table',
-        'if_statement',
-      },
-      exclude = {}, -- exclude these filetypes
     },
   },
   {
@@ -451,75 +462,75 @@ require('lazy').setup({
     },
   },
 
-  {
-    'wojciech-kulik/xcodebuild.nvim',
-    dependencies = {
-      'nvim-telescope/telescope.nvim',
-      'MunifTanjim/nui.nvim',
-      'folke/snacks.nvim', -- (optional) to show previews
-      'nvim-tree/nvim-tree.lua', -- (optional) to manage project files
-      'stevearc/oil.nvim', -- (optional) to manage project files
-      'nvim-treesitter/nvim-treesitter', -- (optional) for Quick tests support (required Swift parser)
-    },
-    config = function()
-      local xcodebuild = require 'xcodebuild'
+  --{
+  --  'wojciech-kulik/xcodebuild.nvim',
+  --  dependencies = {
+  --    'nvim-telescope/telescope.nvim',
+  --    'MunifTanjim/nui.nvim',
+  --    'folke/snacks.nvim', -- (optional) to show previews
+  --    'nvim-tree/nvim-tree.lua', -- (optional) to manage project files
+  --    'stevearc/oil.nvim', -- (optional) to manage project files
+  --    'nvim-treesitter/nvim-treesitter', -- (optional) for Quick tests support (required Swift parser)
+  --  },
+  --  config = function()
+  --    local xcodebuild = require 'xcodebuild'
 
-      vim.keymap.set('n', '<leader>xp', '<cmd>XcodebuildPicker<cr>', { desc = 'Show Xcodebuild Actions' })
-      vim.keymap.set('n', '<leader>xm', '<cmd>XcodebuildProjectManager<cr>', { desc = 'Show Project Manager Actions' })
-      vim.keymap.set('n', '<leader>xr', '<cmd>XcodebuildBuildRun<cr>', { desc = 'Build & Run Project' })
-      vim.keymap.set('n', '<leader>xb', '<cmd>XcodebuildBuild<cr>', { desc = 'Build Project' })
-      vim.keymap.set('n', '<leader>xl', '<cmd>XcodebuildToggleLogs<cr>', { desc = 'Toggle Xcodebuild Logs' })
-      vim.keymap.set('n', '<leader>xc', '<cmd>XcodebuildToggleCodeCoverage<cr>', { desc = 'Toggle Code Coverage' })
-      vim.keymap.set('n', '<leader>xC', '<cmd>XcodebuildShowCodeCoverageReport<cr>', { desc = 'Show Code Coverage Report' })
-      vim.keymap.set('n', '<leader>xe', '<cmd>XcodebuildTestExplorerToggle<cr>', { desc = 'Toggle Test Explorer' })
-      vim.keymap.set('n', '<leader>xt', '<cmd>XcodebuildTest<cr>', { desc = 'Run current Test Plan' })
-      xcodebuild.setup {}
-    end,
-  },
-  {
-    'mfussenegger/nvim-dap',
-    dependencies = {
-      'wojciech-kulik/xcodebuild.nvim',
-    },
-    config = function()
-      local xcodebuild = require 'xcodebuild.integrations.dap'
-      -- SAMPLE PATH, change it to your local codelldb path
-      local codelldbPath = os.getenv 'HOME' .. '/tools/codelldb-darwin-arm64/extension/adapter/codelldb'
+  --    vim.keymap.set('n', '<leader>xp', '<cmd>XcodebuildPicker<cr>', { desc = 'Show Xcodebuild Actions' })
+  --    vim.keymap.set('n', '<leader>xm', '<cmd>XcodebuildProjectManager<cr>', { desc = 'Show Project Manager Actions' })
+  --    vim.keymap.set('n', '<leader>xr', '<cmd>XcodebuildBuildRun<cr>', { desc = 'Build & Run Project' })
+  --    vim.keymap.set('n', '<leader>xb', '<cmd>XcodebuildBuild<cr>', { desc = 'Build Project' })
+  --    vim.keymap.set('n', '<leader>xl', '<cmd>XcodebuildToggleLogs<cr>', { desc = 'Toggle Xcodebuild Logs' })
+  --    vim.keymap.set('n', '<leader>xc', '<cmd>XcodebuildToggleCodeCoverage<cr>', { desc = 'Toggle Code Coverage' })
+  --    vim.keymap.set('n', '<leader>xC', '<cmd>XcodebuildShowCodeCoverageReport<cr>', { desc = 'Show Code Coverage Report' })
+  --    vim.keymap.set('n', '<leader>xe', '<cmd>XcodebuildTestExplorerToggle<cr>', { desc = 'Toggle Test Explorer' })
+  --    vim.keymap.set('n', '<leader>xt', '<cmd>XcodebuildTest<cr>', { desc = 'Run current Test Plan' })
+  --    xcodebuild.setup {}
+  --  end,
+  --},
+  --{
+  --  'mfussenegger/nvim-dap',
+  --  dependencies = {
+  --    'wojciech-kulik/xcodebuild.nvim',
+  --  },
+  --  config = function()
+  --    local xcodebuild = require 'xcodebuild.integrations.dap'
+  --    -- SAMPLE PATH, change it to your local codelldb path
+  --    local codelldbPath = os.getenv 'HOME' .. '/tools/codelldb-darwin-arm64/extension/adapter/codelldb'
 
-      xcodebuild.setup(codelldbPath)
+  --    xcodebuild.setup(codelldbPath)
 
-      vim.keymap.set('n', '<leader>dd', xcodebuild.build_and_debug, { desc = 'Build & Debug' })
-      vim.keymap.set('n', '<leader>dr', xcodebuild.debug_without_build, { desc = 'Debug Without Building' })
-      vim.keymap.set('n', '<leader>dt', xcodebuild.debug_tests, { desc = 'Debug Tests' })
-      vim.keymap.set('n', '<leader>dT', xcodebuild.debug_class_tests, { desc = 'Debug Class Tests' })
-      vim.keymap.set('n', '<leader>b', xcodebuild.toggle_breakpoint, { desc = 'Toggle Breakpoint' })
-      vim.keymap.set('n', '<leader>B', xcodebuild.toggle_message_breakpoint, { desc = 'Toggle Message Breakpoint' })
-      vim.keymap.set('n', '<leader>dx', xcodebuild.terminate_session, { desc = 'Terminate Debugger' })
+  --    vim.keymap.set('n', '<leader>dd', xcodebuild.build_and_debug, { desc = 'Build & Debug' })
+  --    vim.keymap.set('n', '<leader>dr', xcodebuild.debug_without_build, { desc = 'Debug Without Building' })
+  --    vim.keymap.set('n', '<leader>dt', xcodebuild.debug_tests, { desc = 'Debug Tests' })
+  --    vim.keymap.set('n', '<leader>dT', xcodebuild.debug_class_tests, { desc = 'Debug Class Tests' })
+  --    vim.keymap.set('n', '<leader>b', xcodebuild.toggle_breakpoint, { desc = 'Toggle Breakpoint' })
+  --    vim.keymap.set('n', '<leader>B', xcodebuild.toggle_message_breakpoint, { desc = 'Toggle Message Breakpoint' })
+  --    vim.keymap.set('n', '<leader>dx', xcodebuild.terminate_session, { desc = 'Terminate Debugger' })
 
-      local dap = require 'dap'
-      local ui = require 'dapui'
+  --    local dap = require 'dap'
+  --    local ui = require 'dapui'
 
-      vim.fn.sign_define('DapBreakpoint', { text = '🐞' })
+  --    vim.fn.sign_define('DapBreakpoint', { text = '🐞' })
 
-      dap.listeners.before.event_stopped.dapui_config = function()
-        ui.open()
-      end
-      dap.listeners.before.event_terminated.dapui_config = function()
-        ui.close()
-      end
-      dap.listeners.before.event_exited.dapui_config = function()
-        ui.close()
-      end
-    end,
-    integrations = {
-      pymobiledevice = {
-        enabled = true,
-      },
-      xcodebuild_offline = {
-        enabled = true,
-      },
-    },
-  },
+  --    dap.listeners.before.event_stopped.dapui_config = function()
+  --      ui.open()
+  --    end
+  --    dap.listeners.before.event_terminated.dapui_config = function()
+  --      ui.close()
+  --    end
+  --    dap.listeners.before.event_exited.dapui_config = function()
+  --      ui.close()
+  --    end
+  --  end,
+  --  integrations = {
+  --    pymobiledevice = {
+  --      enabled = true,
+  --    },
+  --    xcodebuild_offline = {
+  --      enabled = true,
+  --    },
+  --  },
+  --},
   {
     'rcarriga/nvim-dap-ui',
     dependencies = {
