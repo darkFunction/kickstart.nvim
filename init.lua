@@ -97,6 +97,7 @@ vim.o.linebreak = true
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 vim.o.expandtab = true
+vim.o.smartindent = false
 
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
@@ -303,8 +304,8 @@ require('lazy').setup({
       },
     },
     keys = {
-      { '[g', '<cmd>Gitsigns nav_hunk "next"<cr>' },
-      { '[G', '<cmd>Gitsigns nav_hunk "prev"<cr>' },
+      { ']g', '<cmd>Gitsigns nav_hunk "next"<cr>' },
+      { '[g', '<cmd>Gitsigns nav_hunk "prev"<cr>' },
     },
   },
   {
@@ -1097,7 +1098,7 @@ require('lazy').setup({
     cmd = { 'ConformInfo' },
     keys = {
       {
-        '<leader>f',
+        '<leader>F',
         function()
           require('conform').format { async = true, lsp_format = 'fallback' }
         end,
@@ -1364,7 +1365,7 @@ require('lazy').setup({
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
         additional_vim_regex_highlighting = { 'ruby' },
       },
-      indent = { enable = true, disable = { 'ruby' } },
+      indent = { enable = true, disable = { 'ruby', 'html' } },
     },
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
