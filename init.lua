@@ -25,6 +25,8 @@ vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
 
 vim.g.markdown_folding = 1
+-- Folds available but open on file open (don't auto-close everything)
+vim.opt.foldlevelstart = 2
 
 -- Custom LSP's
 vim.filetype.add {
@@ -352,6 +354,7 @@ require('lazy').setup({
   },
   {
     'MeanderingProgrammer/render-markdown.nvim',
+    ft = 'markdown',
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' }, -- if you use the mini.nvim suite
     -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.icons' }, -- if you use standalone mini plugins
     -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
@@ -538,13 +541,31 @@ require('lazy').setup({
       'mfussenegger/nvim-dap',
       'nvim-neotest/nvim-nio',
     },
-    opts = {},
+    -- Lazy-loaded: the plugin loads the first time you press one of these keys.
+    -- Add language-specific adapters/configs (e.g. js-debug-adapter, codelldb) later.
+    keys = {
+      { '<leader>b', function() require('dap').toggle_breakpoint() end, desc = 'Debug: toggle [b]reakpoint' },
+      { '<F5>', function() require('dap').continue() end, desc = 'Debug: start/continue' },
+      { '<F10>', function() require('dap').step_over() end, desc = 'Debug: step over' },
+      { '<F11>', function() require('dap').step_into() end, desc = 'Debug: step into' },
+      { '<F12>', function() require('dap').step_out() end, desc = 'Debug: step out' },
+      { '<leader>du', function() require('dapui').toggle() end, desc = 'Debug: toggle [u]I' },
+    },
+    config = function()
+      local dap, dapui = require 'dap', require 'dapui'
+      dapui.setup()
+      -- Auto-open the UI when a session starts, auto-close when it ends.
+      dap.listeners.after.event_initialized['dapui'] = function() dapui.open() end
+      dap.listeners.before.event_terminated['dapui'] = function() dapui.close() end
+      dap.listeners.before.event_exited['dapui'] = function() dapui.close() end
+    end,
   },
   {
     'eandrju/cellular-automaton.nvim',
-    config = function()
-      vim.keymap.set('n', '<leader>zz', '<cmd>CellularAutomaton make_it_rain<cr>', { desc = 'Make it rain' })
-    end,
+    cmd = 'CellularAutomaton',
+    keys = {
+      { '<leader>zz', '<cmd>CellularAutomaton make_it_rain<cr>', desc = 'Make it rain' },
+    },
   },
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
@@ -620,7 +641,6 @@ require('lazy').setup({
       },
     },
   },
-
 
   -- NOTE: Plugins can specify dependencies.
   --
@@ -976,6 +996,7 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
+        lemminx = {},
         solidity_ls = {},
         -- clangd = {},
         -- gopls = {},
@@ -1029,6 +1050,8 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'prettierd', -- Formats HTML/YAML/Markdown (and fallback for the rest)
+        'biome', -- Formats JS/TS/JSON/CSS
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -1093,6 +1116,17 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         swift = { 'swiftlint' },
+        -- Biome for JS/TS/JSON/CSS (with prettierd fallback), prettierd for the rest.
+        json = { 'biome', 'prettierd', stop_after_first = true },
+        jsonc = { 'biome', 'prettierd', stop_after_first = true },
+        javascript = { 'biome', 'prettierd', stop_after_first = true },
+        typescript = { 'biome', 'prettierd', stop_after_first = true },
+        javascriptreact = { 'biome', 'prettierd', stop_after_first = true },
+        typescriptreact = { 'biome', 'prettierd', stop_after_first = true },
+        css = { 'biome', 'prettierd', stop_after_first = true },
+        html = { 'prettierd' },
+        yaml = { 'prettierd' },
+        markdown = { 'prettierd' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -1226,6 +1260,7 @@ require('lazy').setup({
   },
   {
     'loctvl842/monokai-pro.nvim',
+    lazy = true, -- installed but not loaded at startup; :Lazy load monokai-pro.nvim to switch to it
     config = function()
       require('monokai-pro').setup {
         filter = 'machine',
@@ -1296,6 +1331,13 @@ require('lazy').setup({
         'vim',
         'vimdoc',
         'http',
+        'typescript',
+        'javascript',
+        'tsx',
+        'json',
+        'jsonc',
+        'css',
+        'yaml',
       }
       ts.install(ensure_installed)
 
