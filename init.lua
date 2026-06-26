@@ -544,20 +544,62 @@ require('lazy').setup({
     -- Lazy-loaded: the plugin loads the first time you press one of these keys.
     -- Add language-specific adapters/configs (e.g. js-debug-adapter, codelldb) later.
     keys = {
-      { '<leader>b', function() require('dap').toggle_breakpoint() end, desc = 'Debug: toggle [b]reakpoint' },
-      { '<F5>', function() require('dap').continue() end, desc = 'Debug: start/continue' },
-      { '<F10>', function() require('dap').step_over() end, desc = 'Debug: step over' },
-      { '<F11>', function() require('dap').step_into() end, desc = 'Debug: step into' },
-      { '<F12>', function() require('dap').step_out() end, desc = 'Debug: step out' },
-      { '<leader>du', function() require('dapui').toggle() end, desc = 'Debug: toggle [u]I' },
+      {
+        '<leader>b',
+        function()
+          require('dap').toggle_breakpoint()
+        end,
+        desc = 'Debug: toggle [b]reakpoint',
+      },
+      {
+        '<F5>',
+        function()
+          require('dap').continue()
+        end,
+        desc = 'Debug: start/continue',
+      },
+      {
+        '<F10>',
+        function()
+          require('dap').step_over()
+        end,
+        desc = 'Debug: step over',
+      },
+      {
+        '<F11>',
+        function()
+          require('dap').step_into()
+        end,
+        desc = 'Debug: step into',
+      },
+      {
+        '<F12>',
+        function()
+          require('dap').step_out()
+        end,
+        desc = 'Debug: step out',
+      },
+      {
+        '<leader>du',
+        function()
+          require('dapui').toggle()
+        end,
+        desc = 'Debug: toggle [u]I',
+      },
     },
     config = function()
       local dap, dapui = require 'dap', require 'dapui'
       dapui.setup()
       -- Auto-open the UI when a session starts, auto-close when it ends.
-      dap.listeners.after.event_initialized['dapui'] = function() dapui.open() end
-      dap.listeners.before.event_terminated['dapui'] = function() dapui.close() end
-      dap.listeners.before.event_exited['dapui'] = function() dapui.close() end
+      dap.listeners.after.event_initialized['dapui'] = function()
+        dapui.open()
+      end
+      dap.listeners.before.event_terminated['dapui'] = function()
+        dapui.close()
+      end
+      dap.listeners.before.event_exited['dapui'] = function()
+        dapui.close()
+      end
     end,
   },
   {
@@ -853,6 +895,26 @@ require('lazy').setup({
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
 
+          -- Wrap a native LSP location handler (definition/implementation/type_definition)
+          -- so it works reliably with every server, but still renders a Telescope fuzzy
+          -- picker when there is more than one result. The native request avoids the
+          -- Telescope LSP-picker incompatibility with some servers (e.g. the Solidity LS),
+          -- which silently returns "no results".
+          local function lsp_jump(lsp_method)
+            return function()
+              lsp_method {
+                on_list = function(options)
+                  vim.fn.setqflist({}, ' ', options)
+                  if #options.items == 1 then
+                    vim.cmd.cfirst() -- single result: jump straight there
+                  else
+                    require('telescope.builtin').quickfix() -- multiple: fuzzy pick
+                  end
+                end,
+              }
+            end
+          end
+
           vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = 'Open documentation. Tap twice to enter doc.', noremap = true, silent = true })
 
           -- Rename the variable under your cursor.
@@ -868,12 +930,12 @@ require('lazy').setup({
 
           -- Jump to the implementation of the word under your cursor.
           --  Useful when your language has ways of declaring types without an actual implementation.
-          map('gli', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
+          map('gli', lsp_jump(vim.lsp.buf.implementation), '[G]oto [I]mplementation')
 
           -- Jump to the definition of the word under your cursor.
           --  This is where a variable was first declared, or where a function is defined, etc.
           --  To jump back, press <C-t>.
-          map('gld', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('gld', lsp_jump(vim.lsp.buf.definition), '[G]oto [D]efinition')
 
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
@@ -890,7 +952,7 @@ require('lazy').setup({
           -- Jump to the type of the word under your cursor.
           --  Useful when you're not sure what type a variable is and you want to see
           --  the definition of its *type*, not where it was *defined*.
-          map('glt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
+          map('glt', lsp_jump(vim.lsp.buf.type_definition), '[G]oto [T]ype Definition')
 
           -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
           ---@param client vim.lsp.Client
@@ -997,7 +1059,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         lemminx = {},
-        solidity_ls = {},
+        solidity_ls_nomicfoundation = {},
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -1118,7 +1180,6 @@ require('lazy').setup({
         swift = { 'swiftlint' },
         -- Biome for JS/TS/JSON/CSS (with prettierd fallback), prettierd for the rest.
         json = { 'biome', 'prettierd', stop_after_first = true },
-        jsonc = { 'biome', 'prettierd', stop_after_first = true },
         javascript = { 'biome', 'prettierd', stop_after_first = true },
         typescript = { 'biome', 'prettierd', stop_after_first = true },
         javascriptreact = { 'biome', 'prettierd', stop_after_first = true },
@@ -1335,7 +1396,6 @@ require('lazy').setup({
         'javascript',
         'tsx',
         'json',
-        'jsonc',
         'css',
         'yaml',
       }
